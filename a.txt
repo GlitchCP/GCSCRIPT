@@ -1,0 +1,118 @@
+function drop(id, amount)
+    SendPacket(2, [[action|dialog_return
+dialog_name|drop
+item_drop|]] .. id .. [[|
+item_count|]] .. amount .. [[]])
+end
+function split(inputstr, sep)
+    local t = {}
+    for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
+        table.insert(t, str)
+    end
+    return t
+end
+function collect(config, id, id1, id2)
+    local player1 = "player1"
+    local player2 = "player2"
+
+    for _, obj in pairs(GetObjects()) do
+        if obj.id == id or obj.id == id1 or obj.id == id2 then
+            local posx = math.abs(GetLocal().pos_x - obj.pos_x)
+            local posy = math.abs(GetLocal().pos_y - obj.pos_y)
+            if posx < 200 and posy < 200 then
+                if obj.pos_x // 32 == room[1].x and obj.pos_y // 32 == room[1].y or obj.pos_x // 32 ==
+                    room[2].x and obj.pos_y // 32 == room[2].y then
+                    local pkt = {}
+                    pkt.type = 11
+                    pkt.int_data = obj.oid
+                    pkt.pos_x = obj.pos_x
+                    pkt.pos_y = obj.pos_y
+                    SendPacketRaw(pkt)
+                end
+            end
+        end
+    end
+end
+function scanObject(x, y)
+    wlc = 0
+    dlc = 0
+    bglc = 0
+    for _, obj in pairs(GetObjects()) do
+        if obj.id == 242 then
+            if obj.pos_x // 32 == x and obj.pos_y // 32 == y then
+                wlc = math.floor(wlc + obj.count)
+            end
+        elseif obj.id == 1796 then
+            if obj.pos_x // 32 == x and obj.pos_y // 32 == y then
+                dlc = math.floor(dlc + obj.count)
+            end
+        elseif obj.id == 7188 then
+            if obj.pos_x // 32 == x and obj.pos_y // 32 == y then
+                bglc = math.floor(bglc + obj.count)
+            end
+
+        end
+      
+    end
+    return bglc, dlc, wlc
+end
+function sendText(text)
+    RunThread(function()
+        Sleep(1000)
+         SendPacket(2,[[
+action|input
+|text|]]..text..[[
+    ]])
+
+    end)
+   end
+function sendOverlay(text)
+    var = {}
+    var[0] = "OnTextOverlay"
+    var[1] = text
+    var.netid = -1
+    SendVarlist(var)
+end
+-- config
+config = {
+    player1 = {
+        x = 69,
+        y = 42,
+        set = true
+    },
+    player2 = {
+        x = 77,
+        y = 42,
+        set = true
+    }
+}
+function switch(combinedAmount)
+    local rates = {
+        wl = 1,
+        dl = 100,
+        bgl = 10000
+    }
+
+    local bglAmount = math.floor(combinedAmount / rates["bgl"])
+    combinedAmount = combinedAmount % rates["bgl"]
+
+    local dlAmount = math.floor(combinedAmount / rates["dl"])
+    combinedAmount = combinedAmount % rates["dl"]
+
+    local wlAmount = combinedAmount
+
+    return bglAmount, dlAmount, wlAmount
+end
+function getPercentage(num, percent)
+    return num * (percent / 100)
+end
+function cv(amount, fromCurrency, toCurrency)
+    local rates = {
+        wl = 1,
+        dl = 100,
+        bgl = 10000
+    }
+
+    local convertedAmount = amount * rates[fromCurrency] / rates[toCurrency]
+    return convertedAmount
+end
