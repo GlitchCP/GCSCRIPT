@@ -1,3 +1,9 @@
+function act(id)
+    pkt = {}
+    pkt.type = 10
+    pkt.int_data = id
+    SendPacketRaw(pkt)
+end
 function drop(id, amount)
     SendPacket(2, [[action|dialog_return
 dialog_name|drop
